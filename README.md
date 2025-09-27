@@ -22,11 +22,11 @@ Below is a rough outline. Adjust as per your actual choices:
 
 | Layer | Technologies / Tools |
 |-------|------------------------|
-| Frontend | React / Next.js / Vue / Svelte (whatever you used) |
-| UI / Styling | Tailwind CSS / Bootstrap / CSS Modules / Styled Components |
-| Backend / API | Node.js / Express / Python / Flask / FastAPI / etc. |
+| Frontend | HTML 
+| UI / Styling |  CSS /  CSS Modules / Styled Components |
+| Backend / API |  Python / Flask. |
 | AI / Logic | OpenAI API / GPT models / custom logic |
-| Hosting / Deployment | Railway (or other) |
+| Hosting / Deployment | Railway  |
 | Environment / Config | `.env` for API keys, secrets, etc. |
 
 ---

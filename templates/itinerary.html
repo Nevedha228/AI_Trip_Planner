@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ itinerary.destination }} - Complete Travel Plan</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* === Existing Styles Kept Intact === */
+        :root {
+            --primary: #2563eb;
+            --secondary: #059669;
+            --accent: #dc2626;
+            --warning: #f59e0b;
+        }
+        body { font-family: 'Poppins', sans-serif; min-height: 100vh; background: #f8fafc; position: relative; }
+        .destination-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; background-size: cover; background-position: center; background-repeat: no-repeat; }
+        .bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: -1; }
+        .content-container { min-height: 100vh; padding: 1rem 0; }
+        .content-card { background: rgba(255, 255, 255, 0.98); border-radius: 15px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); margin-bottom: 1.5rem; overflow: hidden; }
+        .header-card { background: white; border-radius: 15px; }
+        .destination-title { font-size: 2.5rem; font-weight: 700; color: #1f2937; margin-bottom: 0.5rem; }
+        .budget-system { background: #f8fafc; border-radius: 10px; padding: 1rem; margin: 1rem 0; border: 1px solid #e5e7eb; }
+        .budget-progress { height: 8px; border-radius: 5px; margin: 0.5rem 0; background: #e5e7eb; overflow: hidden; }
+        .budget-progress-bar { height: 100%; border-radius: 5px; }
+        .budget-safe { background: #10b981; }
+        .budget-warning { background: #f59e0b; }
+        .budget-danger { background: #ef4444; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.5rem 0; }
+        .stat-item { text-align: center; padding: 1rem; background: white; border-radius: 10px; border: 1px solid #f1f5f9; }
+        .stat-item i { font-size: 1.5rem; color: var(--primary); margin-bottom: 0.5rem; }
+        .weather-widget { background: #667eea; color: white; border-radius: 10px; padding: 1rem; margin: 1rem 0; }
+        .timeline-nav { background: white; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; position: sticky; top: 10px; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .day-buttons { display: flex; gap: 0.5rem; overflow-x: auto; padding: 0.5rem 0; }
+        .day-btn { padding: 0.6rem 1rem; border: 1px solid #e5e7eb; border-radius: 25px; background: white; color: #6b7280; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .day-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .day-card { background: white; border-radius: 15px; padding: 1.5rem; margin: 1rem 0; border: 1px solid #e5e7eb; }
+        .time-slot { margin: 1.5rem 0; padding: 1.5rem; background: #f8fafc; border-radius: 10px; border-left: 4px solid transparent; }
+        .time-slot.morning { border-left-color: #f59e0b; }
+        .time-slot.afternoon { border-left-color: #3b82f6; }
+        .time-slot.evening { border-left-color: #8b5cf6; }
+        .activity-image { width: 100%; height: 200px; border-radius: 10px; object-fit: cover; margin: 1rem 0; }
+        .option-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .option-card { background: white; padding: 1rem; border-radius: 10px; border: 1px solid #e5e7eb; cursor: pointer; }
+        .option-card.selected { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2); }
+        .transport-card { border-color: #d1d5db; }
+        .food-high { border-color: #dc2626; background: #fef2f2; }
+        .food-medium { border-color: #d97706; background: #fffbeb; }
+        .food-low { border-color: #059669; background: #f0fdf4; }
+        .bg-loading { display: flex; justify-content: center; align-items: center; height: 100vh; color: white; background: rgba(0,0,0,0.8); position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
+        .loading-spinner { width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media (max-width: 768px) { .destination-title { font-size: 2rem; } .stats-grid { grid-template-columns: repeat(2, 1fr); } .option-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="destination-bg" id="destinationBackground"></div>
+    <div class="bg-overlay"></div>
+
+    <div class="bg-loading" id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div>Loading your trip...</div>
+    </div>
+
+    <div class="content-container">
+        <div class="container">
+            <!-- Header Card -->
+            <div class="content-card header-card">
+                <div class="p-4 text-center">
+                    <h1 class="destination-title">{{ itinerary.destination }}</h1>
+                    <p class="lead text-muted mb-3">{{ itinerary.days }}-Day Travel Plan</p>
+                    <div class="stats-grid">
+                        <div class="stat-item"><i class="fas fa-calendar-day"></i><h4>{{ itinerary.days }}</h4><small>Days</small></div>
+                        <div class="stat-item"><i class="fas fa-map-marked-alt"></i><h4>{{ itinerary.itinerary|length * 3 }}</h4><small>Activities</small></div>
+                        <div class="stat-item"><i class="fas fa-rupee-sign"></i><h4 class="rupee-icon">{{ itinerary.budget }}</h4><small>Budget</small></div>
+                        <div class="stat-item"><i class="fas fa-star"></i><h4>5.0</h4><small>Rating</small></div>
+                    </div>
+                    <div class="budget-system">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Budget: <strong class="rupee-icon">{{ itinerary.budget }}</strong></span>
+                            <span>Estimated: <strong class="rupee-icon" id="currentTotalCost">{{ itinerary.estimated_total_cost }}</strong></span>
+                        </div>
+                        <div class="budget-progress"><div class="budget-progress-bar" id="budgetProgress"></div></div>
+                        <div id="budgetStatus" class="mt-2 small"></div>
+                    </div>
+                    <div class="weather-widget">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div><h5 class="mb-1">{{ itinerary.destination }}</h5><p class="mb-0" id="weatherCondition">Loading weather...</p></div>
+                            <div class="weather-temp fs-3" id="weatherTemp">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Day Navigation -->
+            <div class="content-card timeline-nav">
+                <h5 class="mb-2">📅 Daily Itinerary</h5>
+                <div class="day-buttons">
+                    {% for day in itinerary.itinerary %}
+                    <button class="day-btn" onclick="scrollToDay({{ day.day }})" data-day="{{ day.day }}">Day {{ day.day }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Daily Itinerary -->
+            {% for day in itinerary.itinerary %}
+            <div class="content-card day-section" id="day-{{ day.day }}">
+                <div class="day-card">
+                    <div class="text-center mb-3"><h3>Day {{ day.day }} - {{ itinerary.destination }}</h3><p class="text-muted">Estimated cost: <span class="rupee-icon">{{ day.estimated_cost }}</span></p></div>
+                    {% for time_slot in ['morning', 'afternoon', 'evening'] %}
+                    <div class="time-slot {{ time_slot }}">
+                        <h5 class="mb-3"><i class="fas fa-{{ 'sun' if time_slot == 'morning' else 'cloud-sun' if time_slot == 'afternoon' else 'moon' }} me-2"></i>{{ time_slot|title }} Activity</h5>
+                        <div class="activity-content">
+                            <h6 class="mb-2">{% set activity = day[time_slot] %}{% if activity is mapping %}{{ activity.title }}{% else %}{{ activity.split('+')[0] if '+' in activity else activity }}{% endif %}</h6>
+                            <p class="text-muted mb-3 small">{% if activity is mapping %}{{ activity.description }}{% else %}{{ activity.split('+')[1] if '+' in activity else 'Enjoy this activity' }}{% endif %}</p>
+
+                            <!-- Transport Options -->
+                            <h6 class="mt-3">🚗 Transport Options:</h6>
+                            <div class="option-grid">
+                                {% set transport_options = [{'icon': 'bus', 'name': 'Local Bus', 'cost': '50-100', 'time': '30-45 mins', 'badge': 'Economical'},{'icon': 'taxi', 'name': 'Auto Rickshaw', 'cost': '150-250', 'time': '20-30 mins', 'badge': 'Best Value'},{'icon': 'car', 'name': 'Taxi/Cab', 'cost': '300-500', 'time': '15-25 mins', 'badge': 'Comfortable'}] %}
+                                {% for option in transport_options %}
+                                <div class="option-card transport-card" data-cost="{{ [75,200,400][loop.index0] }}" data-type="transport" data-day="{{ day.day }}" data-time="{{ time_slot }}" onclick="selectOption(this)">
+                                    <i class="fas fa-{{ option.icon }} text-primary mb-2"></i>
+                                    <h6 class="small">{{ option.name }}</h6>
+                                    <p class="rupee-icon small mb-1">{{ option.cost }}</p>
+                                    <small class="text-muted">{{ option.time }}</small>
+                                    <span class="badge bg-success mt-1">{{ option.badge }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Food Options -->
+                            <h6 class="mt-3">🍽️ Dining Options:</h6>
+                            <div class="option-grid">
+                                {% set food_options = [{'type':'high','name':'Luxury Dining','cost':'400-800','desc':'5-star experience','badge':'High Budget'},{'type':'medium','name':'Comfort Dining','cost':'200-400','desc':'Great quality','badge':'Medium Budget'},{'type':'low','name':'Local Eatery','cost':'50-150','desc':'Authentic local','badge':'Low Budget'}] %}
+                                {% for option in food_options %}
+                                <div class="option-card food-{{ option.type }}" data-cost="{{ [600,300,100][loop.index0] }}" data-type="food" data-day="{{ day.day }}" data-time="{{ time_slot }}" onclick="selectOption(this)">
+                                    <h6 class="small">{{ option.name }}</h6>
+                                    <p class="rupee-icon small mb-1">{{ option.cost }}</p>
+                                    <small class="text-muted">{{ option.desc }}</small>
+                                    <span class="badge bg-{{ 'danger' if option.type=='high' else 'warning' if option.type=='medium' else 'success' }} mt-1">{{ option.badge }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Quick Actions -->
+            <div class="content-card text-center p-4">
+                <h4 class="mb-3">Ready to Travel! 🎉</h4>
+                <div class="d-flex gap-2 justify-content-center flex-wrap">
+                    <button class="btn btn-primary" onclick="window.print()"><i class="fas fa-print me-1"></i>Print</button>
+                    <button class="btn btn-success" onclick="downloadPDF()"><i class="fas fa-download me-1"></i>PDF</button>
+                    <button class="btn btn-info" onclick="sharePlan()"><i class="fas fa-share me-1"></i>Share</button>
+                    <a href="/" class="btn btn-outline-primary"><i class="fas fa-plus me-1"></i>New Trip</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => { document.getElementById('loadingScreen').style.display = 'none'; }, 500);
+            initializeBasicFeatures();
+        });
+
+        function initializeBasicFeatures() {
+            updateBudgetDisplay();
+            setSimpleWeather();
+            setSimpleBackground();
+            initializeRupeeSymbols();
+        }
+
+        function updateBudgetDisplay() {
+            const userBudget = {{ itinerary.budget|int }};
+            const estimatedCost = {{ itinerary.estimated_total_cost }};
+            const percentage = Math.min((estimatedCost / userBudget) * 100, 100);
+            const progressBar = document.getElementById('budgetProgress');
+            const statusText = document.getElementById('budgetStatus');
+            let statusClass = 'budget-safe', statusMessage = 'Within budget';
+            if (percentage > 100) { statusClass = 'budget-danger'; statusMessage = `Over by ₹${estimatedCost - userBudget}`; }
+            else if (percentage > 85) { statusClass = 'budget-warning'; statusMessage = 'Close to limit'; }
+            progressBar.className = `budget-progress-bar ${statusClass}`;
+            progressBar.style.width = `${percentage}%`;
+            statusText.textContent = statusMessage;
+        }
+
+        function setSimpleWeather() {
+            const destination = '{{ itinerary.destination }}'.toLowerCase();
+            const weatherData = { 'ooty': { temp: '18°C', condition: 'Cool & Pleasant' }, 'goa': { temp: '32°C', condition: 'Sunny & Warm' }, 'manali': { temp: '12°C', condition: 'Cold & Clear' }, 'kerala': { temp: '28°C', condition: 'Warm & Humid' }, 'default': { temp: '26°C', condition: 'Pleasant' } };
+            const weather = weatherData[destination] || weatherData.default;
+            document.getElementById('weatherTemp').textContent = weather.temp;
+            document.getElementById('weatherCondition').textContent = weather.condition;
+        }
+
+        function setSimpleBackground() {
+            const destination = '{{ itinerary.destination }}'.toLowerCase();
+            const backgroundImages = { 'ooty':'https://images.unsplash.com/photo-1580136579312-9aeb6b15c6d0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80','goa':'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80','manali':'https://images.unsplash.com/photo-1569949380646-4b14653d7e8e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80','kerala':'https://images.unsplash.com/photo-1580234811497-9df7fd2f357e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80','default':'https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' };
+            document.getElementById('destinationBackground').style.backgroundImage = `url('${backgroundImages[destination] || backgroundImages.default}')`;
+        }
+
+        function initializeRupeeSymbols() {
+            document.querySelectorAll('.rupee-icon').forEach(el => { if (!el.innerHTML.startsWith('₹')) el.innerHTML = '₹' + el.innerHTML; });
+        }
+
+        function selectOption(element) {
+            const siblings = element.parentElement.querySelectorAll('.option-card');
+            siblings.forEach(sib => sib.classList.remove('selected'));
+            element.classList.add('selected');
+            setTimeout(updateBudgetDisplay, 100);
+        }
+
+        function scrollToDay(day) {
+            document.getElementById(`day-${day}`).scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document.querySelectorAll('.day-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.day == day));
+        }
+
+        function sharePlan() {
+            const text = `Check out my {{ itinerary.days }}-day trip to {{ itinerary.destination }}!`;
+            if (navigator.share) { navigator.share({ title: 'My Travel Plan', text: text, url: window.location.href }); }
+            else { navigator.clipboard.writeText(text + ' ' + window.location.href); alert('Trip details copied to clipboard!'); }
+        }
+
+        function downloadPDF() {
+            const element = document.querySelector('.content-container');
+            const opt = { margin:0.5, filename:`{{ itinerary.destination }}_Itinerary.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'in', format:'letter', orientation:'portrait'} };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        window.addEventListener('scroll', function() {
+            const daySections = document.querySelectorAll('.day-section');
+            const navButtons = document.querySelectorAll('.day-btn');
+            let currentDay = 1;
+            daySections.forEach(section => { const rect = section.getBoundingClientRect(); if(rect.top <= 100) currentDay = section.id.split('-')[1]; });
+            navButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.day == currentDay));
+        });
+    </script>
+</body>
+</html>

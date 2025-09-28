@@ -18,7 +18,7 @@ The live demo is available here: https://web-production-73d6.up.railway.app/
 
 ## 🧰 Tech Stack
 
-Below is a rough outline. Adjust as per your actual choices:
+
 
 | Layer | Technologies / Tools |
 |-------|------------------------|
